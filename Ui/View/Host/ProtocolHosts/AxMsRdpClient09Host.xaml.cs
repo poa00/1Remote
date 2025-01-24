@@ -70,7 +70,7 @@ namespace _1RM.View.Host.ProtocolHosts
         private int _retryCount = 0;
         private const int MAX_RETRY_COUNT = 20;
 
-        private readonly System.Timers.Timer _loginResizeTimer;
+        private readonly System.Timers.Timer _loginResizeTimer; // timer for login resize, to fix the issue that the rdp client size is not correct when login
         private DateTime _lastLoginTime = DateTime.MinValue;
 
 
@@ -87,6 +87,20 @@ namespace _1RM.View.Host.ProtocolHosts
         private AxMsRdpClient09Host(RDP rdp, int width = 0, int height = 0) : base(rdp, true)
         {
             InitializeComponent();
+
+
+            MenuItems.Add(new System.Windows.Controls.Separator());
+            MenuItems.Add(new System.Windows.Controls.MenuItem()
+            {
+                Header = "Ctrl + Alt + Del",
+                Command = new RelayCommand((o) =>
+                {
+                    _rdpClient?.Focus();
+                    new MsRdpClientNonScriptableWrapper(_rdpClient.GetOcx()).SendKeys(
+                        new int[] { 0x1d, 0x38, 0x53, 0x53, 0x38, 0x1d },
+                        new bool[] { false, false, false, true, true, true, });
+                }, o => HasConnected)
+            });
 
             GridMessageBox.Visibility = Visibility.Collapsed;
             GridLoading.Visibility = Visibility.Visible;
@@ -195,7 +209,6 @@ namespace _1RM.View.Host.ProtocolHosts
             Debug.Assert(_rdpClient != null); if (_rdpClient == null) return;
             SimpleLogHelper.Debug("RDP Host: init Static");
             _rdpClient.AdvancedSettings2.EncryptionEnabled = 1;
-            _rdpClient.AdvancedSettings5.AuthenticationLevel = 0;
             _rdpClient.AdvancedSettings5.EnableAutoReconnect = true;
             // setting PublicMode to false allows the saving of credentials, which prevents
             _rdpClient.AdvancedSettings6.PublicMode = false;
@@ -701,6 +714,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 RdpInitDisplay(width, height, isReconnecting);
                 RdpInitPerformance();
                 RdpInitGateway();
+                _rdpSettings.ApplyRdpControlAdditionalSettings(_rdpClient!);
                 Status = ProtocolHostStatus.Initialized;
             }
             catch (Exception e)
@@ -756,7 +770,8 @@ namespace _1RM.View.Host.ProtocolHosts
                 return;
             }
             Debug.Assert(_rdpClient != null); if (_rdpClient == null) return;
-            _rdpClient.FullScreen = true; // this will invoke OnRequestGoFullScreen -> MakeNormal2FullScreen
+            if (_rdpClient.FullScreen != true)
+                _rdpClient.FullScreen = true; // this will invoke OnRequestGoFullScreen -> MakeNormal2FullScreen
         }
 
         public override ProtocolHostType GetProtocolHostType()
@@ -834,9 +849,9 @@ namespace _1RM.View.Host.ProtocolHosts
                     _previousHeight = (uint)e.NewSize.Height;
                     Execute.OnUIThreadSync(() =>
                     {
+                        _loginResizeTimer.Stop();
                         _resizeEndTimer.Stop();
                         _resizeEndTimer.Start();
-                        _loginResizeTimer.Stop();
                     });
                 }
             }
@@ -901,7 +916,7 @@ namespace _1RM.View.Host.ProtocolHosts
             {
                 while (true)
                 {
-                    // Window drag an drop resize only after mouse button release, 当拖动最大化的窗口时，需检测鼠标按键释放后再调整分辨率，详见：https://github.com/1Remote/1Remote/issues/553
+                    // Window drag and drop resize only after mouse button release, 当拖动最大化的窗口时，需检测鼠标按键释放后再调整分辨率，详见：https://github.com/1Remote/1Remote/issues/553
                     var isPressed = false;
                     Execute.OnUIThreadSync(() => { isPressed = Mouse.LeftButton == MouseButtonState.Pressed; });
                     if (!isPressed)
@@ -967,6 +982,10 @@ namespace _1RM.View.Host.ProtocolHosts
                         _lastScaleFactor = newScaleFactor;
                         _rdpClient?.UpdateSessionDisplaySettings(w, h, w, h, 0, newScaleFactor, 100);
                     }
+                    catch (COMException)
+                    {
+                        // ignore error code 0x8000FFFF
+                    }
                     catch (Exception e)
                     {
                         SimpleLogHelper.Error(e);
@@ -1015,6 +1034,7 @@ namespace _1RM.View.Host.ProtocolHosts
                 // Kill logical focus
                 FocusManager.SetFocusedElement(FocusManager.GetFocusScope(RdpHost), null);
                 Keyboard.ClearFocus();
+                this.Focus();
                 RdpHost.Focus();
                 if (_rdpClient is { } rdp)
                 {

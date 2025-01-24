@@ -20,6 +20,12 @@ namespace _1RM.View
     {
         public DataSourceBase? DataSource => Server.DataSource;
         public string DataSourceName => DataSource?.DataSourceName ?? "";
+        private string _dataSourceNameForLauncher = "";
+        public string DataSourceNameForLauncher
+        {
+            get => _dataSourceNameForLauncher;
+            set => SetAndNotifyIfChanged(ref _dataSourceNameForLauncher, value);
+        }
 
         /// <summary>
         /// Order in Main window list view
@@ -88,20 +94,20 @@ namespace _1RM.View
             get => _server;
             set
             {
-                if (_server != value)
+                //if (_server != value)
                 {
                     _server = value;
                     _server.Tags = _server.Tags.Select(x => x.ToLower()).ToList();
 
-                    if (ConverterNoteToVisibility.IsVisible(Server.Note))
+                    if (ConverterNoteToVisibility.IsVisible(_server.Note))
                     {
                         Execute.OnUIThreadSync(() =>
                         {
-                            HoverNoteDisplayControl = new NoteIcon(this.Server);
+                            HoverNoteDisplayControl = new NoteIcon(_server);
                         });
                     }
-                    LastConnectTime = LocalityConnectRecorder.Get(Server);
-                    TagString = string.Join(" ", Server.Tags.Select(x => "#" + x));
+                    LastConnectTime = LocalityConnectRecorder.ConnectTimeGet(_server);
+                    TagString = string.Join(" ", _server.Tags.Select(x => "#" + x));
                     RaisePropertyChanged(nameof(TagString));
                     ReLoadTags();
                     RaisePropertyChanged(nameof(Id));

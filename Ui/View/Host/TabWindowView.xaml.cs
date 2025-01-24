@@ -35,10 +35,6 @@ namespace _1RM.View.Host
             this.MinWidth = this.MinHeight = 300;
             this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
             this.WindowStyle = WindowStyle.SingleBorderWindow;
-            if (IoC.Get<LocalityService>().TabWindowState != System.Windows.WindowState.Minimized)
-            {
-                this.WindowState = IoC.Get<LocalityService>().TabWindowState;
-            }
 
             Focusable = true;
             this.Loaded += (_, _) =>
@@ -121,6 +117,11 @@ namespace _1RM.View.Host
                 {
                     this.StopFlashingWindow();
                 };
+
+                if (IoC.Get<LocalityService>().TabWindowState != System.Windows.WindowState.Minimized)
+                {
+                    this.WindowState = IoC.Get<LocalityService>().TabWindowState;
+                }
             };
         }
 
@@ -219,6 +220,28 @@ namespace _1RM.View.Host
                     return;
             }
             base.WinTitleBar_OnPreviewMouseDown(sender, e);
+        }
+
+
+
+        private void TabablzControl_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var t = sender.GetType();
+            SimpleLogHelper.Warning(t);
+
+            // focus to be on the integrated exe after clicking on the WPF window.
+            RunForIntegrate();
+        }
+
+        public override void WinTitleBar_OnPreviewMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            var isDragging = _isDragging;
+            base.WinTitleBar_OnPreviewMouseMove(sender, e);
+            if (isDragging && !_isDragging)
+            {
+                // focus to be on the integrated exe after drag on the WPF window.
+                RunForIntegrate();
+            }
         }
     }
 }

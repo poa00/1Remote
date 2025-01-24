@@ -100,6 +100,18 @@ namespace _1RM.View.Settings
         public LauncherSettingViewModel LauncherSettingViewModel => IoC.Get<LauncherSettingViewModel>();
 
 
+        public bool TabHeaderShowIconButton
+		{
+            get => _configurationService.General.TabHeaderShowIconButton;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.TabHeaderShowIconButton, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
+
         public bool TabHeaderShowCloseButton
         {
             get => _configurationService.General.TabHeaderShowCloseButton;
@@ -139,6 +151,18 @@ namespace _1RM.View.Settings
                         MessageBoxHelper.ErrorAlert(res.GetErrorMessage);
                         return;
                     }
+
+                    // do not check additional sources here, because team database may not be connected when one leaves working place.
+                    //foreach (var additionalSource in _dataSourceService.AdditionalSources)
+                    //{
+                    //    var status = additionalSource.Value.Database_SelfCheck();
+                    //    if (status.Status != EnumDatabaseStatus.OK)
+                    //    {
+                    //        ShowPage(EnumMainWindowPage.SettingsData);
+                    //        MessageBoxHelper.ErrorAlert(status.GetErrorMessage);
+                    //        return;
+                    //    }
+                    //}
 
                     if (_configurationService.Launcher.LauncherEnabled != IoC.TryGet<LauncherWindowViewModel>()?.SetHotKey(_configurationService.Launcher.LauncherEnabled, _configurationService.Launcher.HotKeyModifiers, _configurationService.Launcher.HotKeyKey))
                     {

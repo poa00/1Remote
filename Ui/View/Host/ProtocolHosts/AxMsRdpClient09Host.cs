@@ -1,19 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using AxMSTSCLib;
 using MSTSCLib;
 using _1RM.Model.Protocol;
-using _1RM.Service;
 using _1RM.Service.Locality;
 using _1RM.Utils;
 using Shawn.Utils;
-using Shawn.Utils.Interface;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.Controls;
 using Stylet;
@@ -194,13 +189,12 @@ namespace _1RM.View.Host.ProtocolHosts
             GridLoading.Visibility = Visibility.Collapsed;
             GridMessageBox.Visibility = Visibility.Collapsed;
             ParentWindowResize_StartWatch();
-            _resizeEndTimer?.Stop();
-            _resizeEndTimer?.Start();
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(5000);
-                _resizeEndTimer?.Stop();
-            });
+            //_resizeEndTimer?.Start();
+            //Task.Factory.StartNew(() =>
+            //{
+            //    Thread.Sleep(5000);
+            //    _resizeEndTimer?.Stop();
+            //});
         }
 
 
@@ -225,19 +219,26 @@ namespace _1RM.View.Host.ProtocolHosts
 
             var screenSize = this.GetScreenSizeIfRdpIsFullScreen();
 
-            // ! don not remove
-            ParentWindow.WindowState = WindowState.Normal;
-            ParentWindow.WindowStyle = WindowStyle.None;
-            ParentWindow.ResizeMode = ResizeMode.NoResize;
+            double width = screenSize.Width / (_primaryScaleFactor / 100.0);
+            double height = screenSize.Height / (_primaryScaleFactor / 100.0);
+            int ceilingWidth = (int)Math.Ceiling(width);
+            int ceilingHeight = (int)Math.Ceiling(height);
+            ParentWindow.Dispatcher.Invoke(() =>
+            {
+                // ! do not remove
+                ParentWindow.WindowState = WindowState.Normal;
+                ParentWindow.WindowStyle = WindowStyle.None;
+                ParentWindow.ResizeMode = ResizeMode.NoResize;
 
-            ParentWindow.Width = screenSize.Width / (_primaryScaleFactor / 100.0);
-            ParentWindow.Height = screenSize.Height / (_primaryScaleFactor / 100.0);
-            ParentWindow.Left = screenSize.Left / (_primaryScaleFactor / 100.0);
-            ParentWindow.Top = screenSize.Top / (_primaryScaleFactor / 100.0);
+                ParentWindow.Width = ceilingWidth;
+                ParentWindow.Height = ceilingHeight;
+                ParentWindow.Left = screenSize.Left / (_primaryScaleFactor / 100.0);
+                ParentWindow.Top = screenSize.Top / (_primaryScaleFactor / 100.0);
+            });
 
-            SimpleLogHelper.Debug($"RDP to FullScreen resize ParentWindow to : W = {ParentWindow.Width}, H = {ParentWindow.Height}, while screen size is {screenSize.Width} × {screenSize.Height}, ScaleFactor = {_primaryScaleFactor}");
+            SimpleLogHelper.Debug($"RDP to FullScreen resize ParentWindow to : W = {ceilingWidth}({width}), H = {ceilingHeight}({height}), while screen size is {screenSize.Width} × {screenSize.Height}, ScaleFactor = {_primaryScaleFactor}");
 
-            // WARNING!: EnableFullAllScreens do not need SetRdpResolution
+            // WARNING!: EnableFullAllScreens do not need a SetRdpResolution
             if (_rdpSettings.RdpFullScreenFlag == ERdpFullScreenFlag.EnableFullScreen)
             {
                 switch (_rdpSettings.RdpWindowResizeMode)

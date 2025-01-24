@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using _1RM.Service;
 using _1RM.Utils;
-using Google.Protobuf.WellKnownTypes;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.FileSystem;
-using SetSelfStartingHelper = _1RM.Utils.SetSelfStartingHelper;
 
 namespace _1RM.View.Settings.General
 {
@@ -126,6 +122,18 @@ namespace _1RM.View.Settings.General
             set
             {
                 if (SetAndNotifyIfChanged(ref _configurationService.General.TabWindowCloseButtonOnLeft, value))
+                {
+                    _configurationService.Save();
+                }
+            }
+        }
+
+        public bool TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow
+        {
+            get => _configurationService.General.TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow;
+            set
+            {
+                if (SetAndNotifyIfChanged(ref _configurationService.General.TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow, value))
                 {
                     _configurationService.Save();
                 }

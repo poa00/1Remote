@@ -460,17 +460,31 @@ namespace _1RM.View.ServerList
                     for (int i = 0; i < servers.Count; i++)
                     {
                         var vm = servers[i];
-                        if (IsServerVisible.ContainsKey(vm))
-                            IsServerVisible[vm] = matchResults[i].Item1;
+                        if (i < 0 || i >= matchResults.Count)
+                        {
+                            // we get error report here that i is out of range, so we add this check 2024.10.31 https://appcenter.ms/users/VShawn/apps/1Remote-1/crashes/errors/859400306/overview
+                            MsAppCenterHelper.Error(new Exception($"MatchKeywords: i({i}) is out of range(0-{matchResults.Count})"), new Dictionary<string, string>()
+                            {
+                                {"filter", filter},
+                                {"servers.Count", servers.Count.ToString()},
+                            });
+                            continue;
+                        }
                         else
-                            IsServerVisible.Add(vm, matchResults[i].Item1);
+                        {
+                            if (IsServerVisible.ContainsKey(vm))
+                                IsServerVisible[vm] = matchResults[i].Item1;
+                            else
+                                IsServerVisible.Add(vm, matchResults[i].Item1);
+                        }
                     }
                 }
 
             Execute.OnUIThread(() =>
             {
                 // MainFilterString changed -> refresh view source -> calc visible in `ServerListItemSource_OnFilter`
-                CollectionViewSource.GetDefaultView((this.View as ServerListPageView)!.LvServerCards.ItemsSource).Refresh();
+                if ((this.View as ServerListPageView)?.LvServerCards.ItemsSource != null)
+                    CollectionViewSource.GetDefaultView((this.View as ServerListPageView)!.LvServerCards.ItemsSource).Refresh();
                 // invoke ServerListPageView.cs => ServerListItemSource_OnFilter
             });
         }

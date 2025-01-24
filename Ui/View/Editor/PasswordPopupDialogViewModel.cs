@@ -8,6 +8,7 @@ using _1RM.Model;
 using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
 using _1RM.Service;
+using _1RM.Service.Locality;
 using _1RM.Utils;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
@@ -16,16 +17,11 @@ namespace _1RM.View.Editor
 {
     public class PasswordPopupDialogViewModel : NotifyPropertyChangedBaseScreen
     {
-        public static string LastUsername = "";
-        public static string LastPassword = "";
-
-        //public List<ProtocolBaseViewModel> ProtocolList { get; }
-
         public bool DialogResult { get; set; } = false;
 
         public string Title { get; set; } = "";
 
-        private string _userName = "Administrator";
+        private string _userName = "";
         public string UserName
         {
             get => _userName;
@@ -43,33 +39,37 @@ namespace _1RM.View.Editor
         public bool CanUsePrivateKeyForConnect
         {
             get => _canUsePrivateKeyForConnect;
-            set
-            {
-                if (SetAndNotifyIfChanged(ref _canUsePrivateKeyForConnect, value))
-                {
-                    if (value == false)
-                    {
-                        UsePrivateKeyForConnect = false;
-                        PrivateKey = "";
-                    }
-                }
-            }
+            set => SetAndNotifyIfChanged(ref _canUsePrivateKeyForConnect, value);
         }
 
         private bool _usePrivateKeyForConnect = false;
         public bool UsePrivateKeyForConnect
         {
-            get => _usePrivateKeyForConnect;
+            get => _canUsePrivateKeyForConnect && _usePrivateKeyForConnect;
+            set => SetAndNotifyIfChanged(ref _usePrivateKeyForConnect, CanUsePrivateKeyForConnect && value);
+        }
+
+
+        private bool _canRememberInfo = true;
+        public bool CanRememberInfo
+        {
+            get => _canRememberInfo;
             set
             {
-                if (CanUsePrivateKeyForConnect)
+                if (SetAndNotifyIfChanged(ref _canRememberInfo, value))
                 {
-                    SetAndNotifyIfChanged(ref _usePrivateKeyForConnect, value);
+                    RaisePropertyChanged(nameof(IsRememberInfo));
                 }
-                else
-                {
-                    SetAndNotifyIfChanged(ref _usePrivateKeyForConnect, false);
-                }
+            }
+        }
+
+        public bool IsRememberInfo
+        {
+            get => _canRememberInfo && IoC.Get<LocalityService>().GetMisc<bool>($"{nameof(PasswordPopupDialogViewModel)}.{nameof(IsRememberInfo)}");
+            set
+            {
+                IoC.Get<LocalityService>().SetMisc($"{nameof(PasswordPopupDialogViewModel)}.{nameof(IsRememberInfo)}", value.ToString());
+                RaisePropertyChanged();
             }
         }
 
@@ -80,11 +80,10 @@ namespace _1RM.View.Editor
             set => SetAndNotifyIfChanged(ref _privateKey, value);
         }
 
-        public PasswordPopupDialogViewModel(bool canUsePrivateKeyForConnect = false)
+        public PasswordPopupDialogViewModel(bool canUsePrivateKeyForConnect = false, bool canRememberInfo = false)
         {
-            UserName = UnSafeStringEncipher.SimpleDecrypt(LastUsername) ?? LastUsername;
-            Password = UnSafeStringEncipher.SimpleDecrypt(LastPassword) ?? LastPassword;
             CanUsePrivateKeyForConnect = canUsePrivateKeyForConnect;
+            CanRememberInfo = canRememberInfo;
         }
 
         protected override void OnViewLoaded()
@@ -98,6 +97,7 @@ namespace _1RM.View.Editor
                 if (!string.IsNullOrEmpty(v.TbUserName.Text))
                 {
                     v.TbPwd.Focus();
+                    v.TbPwd.CaretIndex = v.TbPwd.Password.Length;
                 }
                 else
                 {
@@ -129,8 +129,6 @@ namespace _1RM.View.Editor
             {
                 return _cmdSave ??= new RelayCommand((o) =>
                 {
-                    LastUsername = UnSafeStringEncipher.SimpleEncrypt(UserName);
-                    LastPassword = UnSafeStringEncipher.SimpleEncrypt(Password);
                     this.DialogResult = true;
                     this.RequestClose(true);
                 }, o => CanSave());

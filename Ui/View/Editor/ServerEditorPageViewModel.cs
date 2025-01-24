@@ -19,6 +19,7 @@ using _1RM.View.Utils;
 using Shawn.Utils;
 using Shawn.Utils.Wpf;
 using Shawn.Utils.Wpf.FileSystem;
+using Shawn.Utils.Wpf.Image;
 using Stylet;
 using Credential = _1RM.Model.Protocol.Base.Credential;
 
@@ -32,7 +33,6 @@ namespace _1RM.View.Editor
         public bool IsAddMode => _serversInBuckEdit == null && Server.IsTmpSession();
         public bool IsBuckEdit => IsAddMode == false && _serversInBuckEdit?.Count() > 1;
         private readonly ProtocolBase _orgServer; // to remember original protocol's options, for restore data when switching protocols
-        private readonly ProtocolConfigurationService _protocolConfigurationService = IoC.Get<ProtocolConfigurationService>();
 
 
 
@@ -535,24 +535,26 @@ namespace _1RM.View.Editor
 
 
             #region change port and username if the old velue is the default port and username
-            if (server is ProtocolBaseWithAddressPort newPort && Server is ProtocolBaseWithAddressPort)
+            if (server is ProtocolBaseWithAddressPort newPort)
             {
-                var oldPortDefault = (ProtocolBaseWithAddressPort)protocolServerBaseAssembly.CreateInstance(Server.GetType().FullName!)!;
-                if (newPort.Port == oldPortDefault.Port)
+                bool isDefaultPort = false;
+                if (Server is ProtocolBaseWithAddressPort)
+                {
+                    var oldPortDefault = (ProtocolBaseWithAddressPort)protocolServerBaseAssembly.CreateInstance(Server.GetType().FullName!)!;
+                    isDefaultPort = newPort.Port == oldPortDefault.Port;
+                }
+                else if (string.IsNullOrEmpty(newPort.Port) || newPort.Port == "3389")
+                {
+                    isDefaultPort = true;
+                }
+                if (isDefaultPort)
                 {
                     var newDefault = (ProtocolBaseWithAddressPort)protocolServerBaseAssembly.CreateInstance(newProtocolType.FullName)!;
                     newPort.Port = newDefault.Port;
                 }
             }
-            if (server is ProtocolBaseWithAddressPortUserPwd newUserName && Server is ProtocolBaseWithAddressPortUserPwd)
-            {
-                var oldDefault = (ProtocolBaseWithAddressPortUserPwd)protocolServerBaseAssembly.CreateInstance(Server.GetType().FullName!)!;
-                if (newUserName.UserName == oldDefault.UserName)
-                {
-                    var newDefault = (ProtocolBaseWithAddressPortUserPwd)protocolServerBaseAssembly.CreateInstance(newProtocolType.FullName)!;
-                    newUserName.UserName = newDefault.UserName;
-                }
-            }
+
+
             #endregion
 
             Server = server;
@@ -632,9 +634,9 @@ namespace _1RM.View.Editor
         {
             var selectedRunner = Server.SelectedRunnerName;
             Runners.Clear();
-            if (_protocolConfigurationService.ProtocolConfigs.ContainsKey(protocolName))
+            if (IoC.Get<ProtocolConfigurationService>().ProtocolConfigs.ContainsKey(protocolName))
             {
-                var c = _protocolConfigurationService.ProtocolConfigs[protocolName];
+                var c = IoC.Get<ProtocolConfigurationService>().ProtocolConfigs[protocolName];
                 Runners.Add("Follow the global settings");
                 foreach (var runner in c.Runners)
                 {
@@ -674,6 +676,23 @@ namespace _1RM.View.Editor
                         {
                             Server.CommandAfterDisconnected = path;
                         }
+                    }
+                });
+            }
+        }
+
+
+        private RelayCommand? _cmdSelectImage;
+        public RelayCommand CmdSelectImage
+        {
+            get
+            {
+                return _cmdSelectImage ??= new RelayCommand((o) =>
+                {
+                    var dlg = new IconPopupDialogViewModel(Server.IconImg);
+                    if (true == MaskLayerController.ShowDialogWithMask(dlg))
+                    {
+                        Server.IconBase64 = dlg.Icon.ToBase64();
                     }
                 });
             }

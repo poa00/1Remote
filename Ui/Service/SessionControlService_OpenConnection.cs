@@ -154,6 +154,10 @@ namespace _1RM.Service
             {
                 lock (_dictLock)
                 {
+                    if (p.AlwaysOpenInNewTabWindow == true && string.IsNullOrEmpty(assignTabToken))
+                    {
+                        assignTabToken = DateTime.Now.Ticks.ToString();
+                    }
                     tab = this.GetOrCreateTabWindow(assignTabToken);
                     if (tab == null) return;
                     if (tab.IsClosing) return;
@@ -192,7 +196,7 @@ namespace _1RM.Service
             // update the last conn time
             {
                 var vmServer = _appData.GetItemById(protocol.DataSource?.DataSourceName ?? "", protocol.Id);
-                vmServer?.UpdateConnectTime();
+                vmServer?.ConnectTimeAddOrUpdate();
                 if (IoC.Get<ConfigurationService>().General.ShowRecentlySessionInTray)
                     IoC.Get<TaskTrayService>().ReloadTaskTrayContextMenu();
             }

@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using _1Remote.Security;
 using _1RM.Model;
 using _1RM.Model.Protocol;
 using _1RM.Model.Protocol.Base;
@@ -70,7 +71,7 @@ namespace _1RM.Service.Locality
         /// <summary>
         /// Update the connect time of id
         /// </summary>
-        public static void UpdateConnectTime(this ProtocolBaseViewModel vmServer, long time = 0)
+        public static void ConnectTimeAddOrUpdate(this ProtocolBaseViewModel vmServer, long time = 0)
         {
             Load();
             //var serverId = $"{server.Id}_From{server.DataSourceName}";
@@ -78,10 +79,10 @@ namespace _1RM.Service.Locality
                 time = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             _settings.ConnectRecodes.AddOrUpdate(vmServer.Id, time, (s, l) => time);
             Save();
-            vmServer.LastConnectTime = Get(vmServer.Server);
+            vmServer.LastConnectTime = ConnectTimeGet(vmServer.Server);
         }
 
-        public static DateTime Get(ProtocolBase server)
+        public static DateTime ConnectTimeGet(ProtocolBase server)
         {
             Load();
             if (_settings.ConnectRecodes.TryGetValue(server.Id, out var ut))
@@ -91,9 +92,7 @@ namespace _1RM.Service.Locality
             }
             return DateTime.MinValue;
         }
-
-
-        public static void Cleanup(IEnumerable<string>? existedIds = null)
+        public static void ConnectTimeCleanup(IEnumerable<string>? existedIds = null)
         {
             Load();
             if (existedIds != null)
@@ -119,9 +118,15 @@ namespace _1RM.Service.Locality
 
         #region QuickConnectionHistory
 
-        public static List<QuickConnectionItem> QuickConnectionHistoryGet() => new List<QuickConnectionItem>(_settings.QuickConnectionHistory);
-        public static void QuickConnectionHistoryAdd(QuickConnectionItem item)
+        public static List<QuickConnectionItem> QuickConnectionHistoryGetAll() => new List<QuickConnectionItem>(_settings.QuickConnectionHistory);
+        public static void QuickConnectionHistoryAddOrUpdate(string host, string protocol, string username, string password, string privateKeyPath)
         {
+            var item = new QuickConnectionItem()
+            {
+                Host = host,
+                Protocol = protocol,
+            };
+            item.SetUserPassword(username, password, privateKeyPath);
             Load();
             var old = _settings.QuickConnectionHistory.FirstOrDefault(x => x.Host == item.Host && x.Protocol == item.Protocol);
             if (old != null)
@@ -144,6 +149,12 @@ namespace _1RM.Service.Locality
             {
                 _settings.QuickConnectionHistory.RemoveRange(50, _settings.QuickConnectionHistory.Count - 50);
             }
+            Save();
+        }
+        public static void QuickConnectionHistoryRemoveAll()
+        {
+            Load();
+            _settings.QuickConnectionHistory.Clear();
             Save();
         }
         #endregion

@@ -11,6 +11,8 @@
              d:DataContext="{d:DesignInstance local:GeneralSettingViewModel}"
              d:DesignHeight="850" d:DesignWidth="800">
     <Grid Background="{DynamicResource BackgroundBrush}">
+        <ScrollViewer>
+
         <StackPanel>
 
             <TextBlock Text="{DynamicResource system_options_general_title}" Style="{StaticResource BlockTitleColumn}" />
@@ -37,7 +39,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="1" Margin="0 0 0 0" TextAlignment="Left" TextWrapping="WrapWithOverflow">
                     <Hyperlink controls:HyperlinkHelper.IsOpenExternal="True"
-                               NavigateUri="https://1remote.github.io/usage/misc/help-translation/" FontSize="12">
+                               NavigateUri="https://1remote.github.io/usage/misc/help-translation/">
                         <Hyperlink.Style>
                             <Style TargetType="{x:Type Hyperlink}">
                                 <Setter Property="Foreground" Value="{DynamicResource AccentMidBrush}"></Setter>
@@ -94,7 +96,7 @@
                     <ColumnDefinition MinWidth="280" SharedSizeGroup="GeneralColumn2"></ColumnDefinition>
                     <ColumnDefinition Width="Auto" SharedSizeGroup="Column3"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <TextBlock Style="{StaticResource TextBlockTitleColumn}" Text="{DynamicResource Connection}"></TextBlock>
+                <TextBlock Style="{StaticResource TextBlockTitleColumn}" Text="{DynamicResource 'Connection Settings'}"></TextBlock>
                 <CheckBox Grid.Column="1" IsChecked="{Binding ConfirmBeforeClosingSession, Mode=TwoWay}" Content="{DynamicResource 'Confirm before closing'}" VerticalAlignment="Center"></CheckBox>
             </Grid>
 
@@ -115,7 +117,7 @@
                     <ColumnDefinition Width="Auto" SharedSizeGroup="Column3"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Style="{StaticResource TextBlockTitleColumn}" Text="Log"></TextBlock>
+                <TextBlock Style="{StaticResource TextBlockTitleColumn}" Text="{DynamicResource system_options_general_log_file_path}"></TextBlock>
                 <StackPanel Orientation="Horizontal" Grid.Column="1">
                     <TextBox Text="{Binding LogPath, Mode=OneWay}"
                              MaxWidth="400"
@@ -169,6 +171,14 @@
                 </Grid.ColumnDefinitions>
                 <CheckBox Grid.Column="1" IsChecked="{Binding TabWindowCloseButtonOnLeft, Mode=TwoWay}" Content="{DynamicResource 'Place the close button on the left side to prevent accidental touches'}" VerticalAlignment="Center"></CheckBox>
             </Grid>
+            <Grid Style="{StaticResource GridOneRow}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="Column1"></ColumnDefinition>
+                    <ColumnDefinition MinWidth="280" SharedSizeGroup="GeneralColumn2"></ColumnDefinition>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="Column3"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="1" IsChecked="{Binding TabWindowSetFocusToLocalDesktopOnMouseLeaveRdpWindow, Mode=TwoWay}" Content="{DynamicResource 'Set focus to local desktop when the mouse is moved out of RDP desktop'}" VerticalAlignment="Center"></CheckBox>
+            </Grid>
             <!--<Grid Style="{StaticResource GridOneRow}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" SharedSizeGroup="Column1"></ColumnDefinition>
@@ -189,5 +199,7 @@
                 <CheckBox Grid.Column="1" IsChecked="{Binding CopyPortWhenCopyAddress, Mode=TwoWay}" Content="{DynamicResource 'Copy the port along with the address when copying'}" VerticalAlignment="Center"></CheckBox>
             </Grid>
         </StackPanel>
+
+        </ScrollViewer>
     </Grid>
 </UserControl>
